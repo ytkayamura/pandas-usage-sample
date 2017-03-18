@@ -53,14 +53,14 @@ def format_diff(x):
 	elif 18000 <= sec0:
 		return '05:00:00~'
 	elif math.isnan(sec0):
-		return 'NaN'
+		return np.nan
 	return 'err'
 df['fmt_diff'] = df.time_diff.apply(format_diff)
 
 # ユーザ数=時間差NaNであることを確認
 # print(len(df.drop_duplicates('user')))
-# print(len(df[df.fmt_diff == 'NaN']))
+# print(len(df[df.fmt_diff != df.fmt_diff]))  # NaNの比較。np.nan == np.nan はFalseとなる。
 
 # 集計、CSV出力
-df[df.fmt_diff != 'NaN'].groupby('fmt_diff').size().reset_index(name='count').to_csv('output/diff_logs_time.csv')
+df.groupby('fmt_diff').size().reset_index(name='count').to_csv('output/diff_logs_time.csv')  # キー=NaNのレコードは集計されない。
 
