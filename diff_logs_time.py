@@ -4,7 +4,7 @@
 '''
 import pandas as pd
 from datetime import datetime
-import numpy
+import numpy as np
 import math
 
 # ログを読み込み
@@ -19,21 +19,21 @@ df = df.sort_values(by=['user', 'dtm']).reset_index()
 
 # 1行ずらしてユーザ、日時を追加結合
 df2 = df.drop(0)
-df2 = df2.append({'user': '', 'dtm': None}, ignore_index=True)
-df['user2'] = df2['user']
-df['dtm2'] = df2['dtm']
+df2 = df2.append({'user': '', 'dtm': np.nan}, ignore_index=True)
+df['user2'] = df2.user
+df['dtm2'] = df2.dtm
 
 # 時間差を算出
-def time_diff(x):
-	if x[0] == x[1]:
+def time_diff(row):
+	if row.user == row.user2:
 		# ユーザが同一の場合のみ差異を算出
-		return x[3] - x[2]
-	return None
-df['diff'] = df[['user', 'user2', 'dtm', 'dtm2']].apply(time_diff, axis=1)
+		return row.dtm2 - row.dtm
+	return np.nan
+df['time_diff'] = df.apply(time_diff, axis=1)
 
 # 時間差をフォーマット
 def format_diff(x):
-	sec0 = x / numpy.timedelta64(1, 's')
+	sec0 = x / np.timedelta64(1, 's')
 	(minu, sec) = divmod(sec0, 60)
 	(hour, minu) = divmod(minu, 60)
 	if sec0 < 10:
@@ -55,12 +55,12 @@ def format_diff(x):
 	elif math.isnan(sec0):
 		return 'NaN'
 	return 'err'
-df['fdiff'] = df['diff'].apply(format_diff)
+df['fmt_diff'] = df.time_diff.apply(format_diff)
 
 # ユーザ数=時間差NaNであることを確認
 # print(len(df.drop_duplicates('user')))
-# print(len(df[df['fdiff'] == 'NaN']))
+# print(len(df[df.fmt_diff == 'NaN']))
 
 # 集計、CSV出力
-df[df['fdiff'] != 'NaN'].groupby('fdiff').size().reset_index(name='count').to_csv('output/diff_logs_time.csv')
+df[df.fmt_diff != 'NaN'].groupby('fmt_diff').size().reset_index(name='count').to_csv('output/diff_logs_time.csv')
 
